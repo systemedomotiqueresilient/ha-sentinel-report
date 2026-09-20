@@ -1,0 +1,15 @@
+generate:
+  name: Générer le rapport
+  description: >
+    Génère immédiatement le rapport Sentinel Report dans le fichier configuré
+    (/share/sentinel_report.txt par défaut). Déclenche aussi la purge automatique
+    si elle est configurée.
+  fields: {}
+
+purge_history:
+  name: Purger l'historique
+  description: >
+    Purge manuellement les fichiers d'historique selon la configuration en place
+    (mode keep_files ou keep_days). Utile pour nettoyer l'historique sans attendre
+    la prochaine génération automatique.
+  fields: {}

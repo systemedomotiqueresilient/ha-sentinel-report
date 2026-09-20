@@ -1,0 +1,97 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sentinel Report — Configuration",
+        "description": "Configurer la génération du rapport de santé unifié (Sentinel + Spook).",
+        "data": {
+          "report_path": "Dossier de destination",
+          "report_file": "Nom du fichier rapport",
+          "include_warnings": "Inclure les warnings Sentinel",
+          "keep_history": "Archiver les rapports avec problèmes (horodatés)",
+          "include_ha_repairs": "Inclure les HA Repairs (deprecated warnings natifs HA)",
+          "notify": "Envoyer une notification HA en cas de problèmes",
+          "notify_threshold": "Seuil de notification HA",
+          "purge_mode": "Mode de purge de l'historique",
+          "purge_keep_files": "Nombre de fichiers à conserver",
+          "purge_keep_days": "Nombre de jours à conserver",
+          "stability_delay": "Délai de stabilité",
+          "companion_device": "Smartphone administrateur (companion app)",
+          "companion_alerts": "Types d'alertes companion app"
+        },
+        "data_description": {
+          "report_path": "Chemin absolu (ex: /share). Ajouté automatiquement à allowlist_external_dirs.",
+          "report_file": "Nom du fichier sans chemin (ex: sentinel_report.txt).",
+          "purge_keep_files": "Utilisé si le mode est 'Conserver N fichiers'. Entre 1 et 365.",
+          "purge_keep_days": "Utilisé si le mode est 'Conserver X jours'. Entre 1 et 365.",
+          "stability_delay": "Délai sans changement avant génération automatique. Entre 60 et 3600 secondes.",
+          "companion_device": "Service notify.mobile_app_* du smartphone principal. Laisser vide pour désactiver.",
+          "companion_alerts": "Événements déclenchant une notification push."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Sentinel Report est déjà configuré. Utilisez Options pour modifier."
+    },
+    "error": {
+      "path_not_absolute": "Le chemin doit être absolu (commencer par /).",
+      "filename_empty": "Le nom de fichier ne peut pas être vide.",
+      "filename_has_slash": "Le nom de fichier ne doit pas contenir de /.",
+      "stability_delay_too_low": "Le délai de stabilité doit être d'au moins 60 secondes.",
+      "stability_delay_too_high": "Le délai de stabilité ne peut pas dépasser 3600 secondes."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sentinel Report — Options",
+        "data": {
+          "report_path": "Dossier de destination",
+          "report_file": "Nom du fichier rapport",
+          "include_warnings": "Inclure les warnings Sentinel",
+          "keep_history": "Archiver les rapports avec problèmes (horodatés)",
+          "include_ha_repairs": "Inclure les HA Repairs (deprecated warnings natifs HA)",
+          "notify": "Envoyer une notification HA en cas de problèmes",
+          "notify_threshold": "Seuil de notification HA",
+          "purge_mode": "Mode de purge de l'historique",
+          "purge_keep_files": "Nombre de fichiers à conserver",
+          "purge_keep_days": "Nombre de jours à conserver",
+          "stability_delay": "Délai de stabilité",
+          "companion_device": "Smartphone administrateur (companion app)",
+          "companion_alerts": "Types d'alertes companion app"
+        }
+      }
+    },
+    "error": {
+      "path_not_absolute": "Le chemin doit être absolu (commencer par /).",
+      "filename_empty": "Le nom de fichier ne peut pas être vide.",
+      "filename_has_slash": "Le nom de fichier ne doit pas contenir de /.",
+      "stability_delay_too_low": "Le délai de stabilité doit être d'au moins 60 secondes.",
+      "stability_delay_too_high": "Le délai de stabilité ne peut pas dépasser 3600 secondes."
+    }
+  },
+  "selector": {
+    "notify_threshold": {
+      "options": {
+        "errors_only": "Erreurs Sentinel uniquement",
+        "all": "Erreurs + warnings + Spook"
+      }
+    },
+    "purge_mode": {
+      "options": {
+        "disabled": "Désactivée",
+        "keep_files": "Conserver N fichiers",
+        "keep_days": "Conserver X jours"
+      }
+    },
+    "companion_alerts": {
+      "options": {
+        "on_report": "À chaque nouveau rapport écrit",
+        "on_problems": "Si le rapport contient des problèmes",
+        "on_restart_fail": "Échec de restart (toujours en erreur après le délai)",
+        "on_resolved": "Résolution d'une instabilité",
+        "on_ha_repair": "HA Repairs détectés (deprecated warnings)"
+      }
+    }
+  }
+}

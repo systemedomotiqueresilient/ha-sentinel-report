@@ -1,0 +1,10 @@
+{
+  "name": "Sentinel Report",
+  "domains": ["sentinel_report"],
+  "documentation": "https://github.com/systemedomotiqueresilient/ha-sentinel-report",
+  "requirements": [],
+  "after_dependencies": [],
+  "codeowners": ["@systemedomotiqueresilient"],
+  "render_readme": true,
+  "homeassistant": "2024.1.0"
+}

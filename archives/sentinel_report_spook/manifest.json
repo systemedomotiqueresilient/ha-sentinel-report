@@ -1,0 +1,13 @@
+{
+  "domain": "sentinel_report_spook",
+  "name": "Sentinel Report — Collecteur Spook",
+  "version": "0.6.0",
+  "documentation": "https://github.com/mathieu/sentinel-report",
+  "issue_tracker": "https://github.com/mathieu/sentinel-report/issues",
+  "codeowners": [],
+  "dependencies": ["spook"],
+  "requirements": [],
+  "config_flow": true,
+  "iot_class": "local_push",
+  "integration_type": "service"
+}

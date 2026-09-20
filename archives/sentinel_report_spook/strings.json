@@ -1,0 +1,7 @@
+{
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Le collecteur Spook est déjà actif."
+    }
+  }
+}

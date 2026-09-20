@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    "ms-ceintl.vscode-language-pack-fr",
+    "editorconfig.editorconfig",
+    "keesschollaart.vscode-home-assistant",
+    "redhat.vscode-yaml",
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "charliermarsh.ruff",
+    "anthropic.claude-code",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "ijD7.gitea",
+    "aaron-bond.better-comments",
+    "gruntfuggly.todo-tree",
+    "usernamehw.errorlens",
+    "pkief.material-icon-theme"
+  ]
+}

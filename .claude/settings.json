@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Write(./custom_components/sentinel/**)",
+      "Write(./custom_components/spook/**)"
+    ]
+  }
+}

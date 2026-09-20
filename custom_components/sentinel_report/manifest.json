@@ -1,0 +1,14 @@
+{
+  "domain": "sentinel_report",
+  "name": "Sentinel Report",
+  "version": "0.6.2",
+  "documentation": "https://github.com/systemedomotiqueresilient/ha-sentinel-report",
+  "issue_tracker": "https://github.com/systemedomotiqueresilient/ha-sentinel-report/issues",
+  "codeowners": [],
+  "dependencies": ["sentinel"],
+  "after_dependencies": ["spook"],
+  "requirements": [],
+  "config_flow": true,
+  "iot_class": "local_push",
+  "integration_type": "service"
+}

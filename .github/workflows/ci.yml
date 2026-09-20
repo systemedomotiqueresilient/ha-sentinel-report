@@ -1,0 +1,104 @@
+name: CI — Sentinel Report
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check custom_components/
+
+  tests:
+    name: Tests unitaires
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest pytest-asyncio pytest-cov voluptuous
+      - name: Lancer les tests avec couverture
+        run: |
+          pytest tests/ -v --tb=short \
+            --cov=custom_components/sentinel_report \
+            --cov-report=term-missing \
+            --cov-fail-under=60
+
+  versions:
+    name: Cohérence des versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier VERSION et manifests
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          FAILED=0
+          for manifest in custom_components/*/manifest.json; do
+            MVER=$(python3 -c "import json; print(json.load(open('$manifest'))['version'])")
+            if [ "$MVER" != "$VERSION" ]; then
+              echo "❌ $manifest : $MVER != $VERSION"
+              FAILED=1
+            else
+              echo "✔ $manifest : $MVER"
+            fi
+          done
+          if [ "$FAILED" = "1" ]; then exit 1; fi
+
+  yaml:
+    name: Validation YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install yamllint
+      - run: |
+          yamllint -d "{extends: relaxed, rules: {line-length: {max: 120}}}" \
+            custom_components/sentinel_report/services.yaml \
+            .github/workflows/ci.yml
+
+  translations:
+    name: Cohérence des traductions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier fr.json et en.json
+        run: |
+          python3 - << 'EOF'
+          import json, sys
+
+          def get_keys(d, prefix=""):
+              keys = set()
+              for k, v in d.items():
+                  full = f"{prefix}.{k}" if prefix else k
+                  if isinstance(v, dict):
+                      keys |= get_keys(v, full)
+                  else:
+                      keys.add(full)
+              return keys
+
+          fr = json.load(open("custom_components/sentinel_report/translations/fr.json"))
+          en = json.load(open("custom_components/sentinel_report/translations/en.json"))
+          fr_keys = get_keys(fr)
+          en_keys = get_keys(en)
+          only_in_fr = fr_keys - en_keys
+          only_in_en = en_keys - fr_keys
+          failed = False
+          if only_in_fr:
+              print(f"❌ Clés en FR absentes en EN : {only_in_fr}")
+              failed = True
+          if only_in_en:
+              print(f"❌ Clés en EN absentes en FR : {only_in_en}")
+              failed = True
+          if not failed:
+              print(f"✔ Traductions cohérentes ({len(fr_keys)} clés)")
+          sys.exit(1 if failed else 0)
+          EOF

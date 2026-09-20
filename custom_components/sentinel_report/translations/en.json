@@ -1,0 +1,97 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sentinel Report — Setup",
+        "description": "Configure the unified health report (Sentinel + Spook).",
+        "data": {
+          "report_path": "Report folder",
+          "report_file": "Report filename",
+          "include_warnings": "Include Sentinel warnings",
+          "keep_history": "Archive reports with problems (timestamped)",
+          "include_ha_repairs": "Include HA Repairs (native HA deprecated warnings)",
+          "notify": "Send a HA notification when problems are detected",
+          "notify_threshold": "HA notification threshold",
+          "purge_mode": "History purge mode",
+          "purge_keep_files": "Number of files to keep",
+          "purge_keep_days": "Number of days to keep",
+          "stability_delay": "Stability delay",
+          "companion_device": "Admin smartphone (companion app)",
+          "companion_alerts": "Companion app alert types"
+        },
+        "data_description": {
+          "report_path": "Absolute path (e.g. /share). Automatically added to allowlist_external_dirs.",
+          "report_file": "Filename without path (e.g. sentinel_report.txt).",
+          "purge_keep_files": "Used when mode is 'Keep N files'. Between 1 and 365.",
+          "purge_keep_days": "Used when mode is 'Keep X days'. Between 1 and 365.",
+          "stability_delay": "Delay without changes before automatic report generation. Between 60 and 3600 seconds.",
+          "companion_device": "notify.mobile_app_* service for the main smartphone. Leave empty to disable.",
+          "companion_alerts": "Events triggering a push notification."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Sentinel Report is already configured. Use Options to modify."
+    },
+    "error": {
+      "path_not_absolute": "The path must be absolute (start with /).",
+      "filename_empty": "The filename cannot be empty.",
+      "filename_has_slash": "The filename must not contain a /.",
+      "stability_delay_too_low": "The stability delay must be at least 60 seconds.",
+      "stability_delay_too_high": "The stability delay cannot exceed 3600 seconds."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sentinel Report — Options",
+        "data": {
+          "report_path": "Report folder",
+          "report_file": "Report filename",
+          "include_warnings": "Include Sentinel warnings",
+          "keep_history": "Archive reports with problems (timestamped)",
+          "include_ha_repairs": "Include HA Repairs (native HA deprecated warnings)",
+          "notify": "Send a HA notification when problems are detected",
+          "notify_threshold": "HA notification threshold",
+          "purge_mode": "History purge mode",
+          "purge_keep_files": "Number of files to keep",
+          "purge_keep_days": "Number of days to keep",
+          "stability_delay": "Stability delay",
+          "companion_device": "Admin smartphone (companion app)",
+          "companion_alerts": "Companion app alert types"
+        }
+      }
+    },
+    "error": {
+      "path_not_absolute": "The path must be absolute (start with /).",
+      "filename_empty": "The filename cannot be empty.",
+      "filename_has_slash": "The filename must not contain a /.",
+      "stability_delay_too_low": "The stability delay must be at least 60 seconds.",
+      "stability_delay_too_high": "The stability delay cannot exceed 3600 seconds."
+    }
+  },
+  "selector": {
+    "notify_threshold": {
+      "options": {
+        "errors_only": "Sentinel errors only",
+        "all": "Errors + warnings + Spook"
+      }
+    },
+    "purge_mode": {
+      "options": {
+        "disabled": "Disabled",
+        "keep_files": "Keep N files",
+        "keep_days": "Keep X days"
+      }
+    },
+    "companion_alerts": {
+      "options": {
+        "on_report": "On every new report written",
+        "on_problems": "When the report contains problems",
+        "on_restart_fail": "Restart failure (still in error after delay)",
+        "on_resolved": "When an instability is resolved",
+        "on_ha_repair": "HA Repairs detected (deprecated warnings)"
+      }
+    }
+  }
+}
