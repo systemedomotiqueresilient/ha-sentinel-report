@@ -26,7 +26,7 @@ def generate_report(
     - has_resolved : True si le rapport contient des incidents résolus
     """
     if generated_at is None:
-        generated_at = datetime.now()
+        generated_at = datetime.now()  # noqa: DTZ005
 
     if not include_warnings:
         sentinel_items = [i for i in sentinel_items if i.get("severity") != "warning"]
@@ -228,11 +228,11 @@ def purge_history(
     if purge_mode == "keep_files":
         to_delete = files[keep_files:]
     elif purge_mode == "keep_days":
-        cutoff = datetime.now() - timedelta(days=keep_days)
+        cutoff = datetime.now() - timedelta(days=keep_days)  # noqa: DTZ005
         for filename in files:
             try:
                 date_str = filename[len("sentinel_report_"):-len(".txt")]
-                file_dt = datetime.strptime(date_str, "%Y-%m-%d_%H-%M-%S")
+                file_dt = datetime.strptime(date_str, "%Y-%m-%d_%H-%M-%S")  # noqa: DTZ007
                 if file_dt < cutoff:
                     to_delete.append(filename)
             except ValueError:

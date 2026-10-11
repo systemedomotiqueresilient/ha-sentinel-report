@@ -4,6 +4,7 @@ v0.6.2 : ajout du collecteur HA Repairs (deprecated warnings natifs HA).
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from datetime import datetime
@@ -11,16 +12,16 @@ from pathlib import Path
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import config_validation as cv, discovery
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 
+from .collectors import ha_repairs as collector_ha_repairs
 from .collectors import sentinel as collector_sentinel
 from .collectors import spook as collector_spook
-from .collectors import ha_repairs as collector_ha_repairs
 from .const import (
     ALERT_ON_HA_REPAIR,
     ALERT_ON_PROBLEMS,
@@ -29,7 +30,6 @@ from .const import (
     ALERT_ON_RESTART_FAIL,
     CONF_COMPANION_ALERTS,
     CONF_COMPANION_DEVICE,
-    CONF_ENTRY_TITLE,
     CONF_INCLUDE_HA_REPAIRS,
     CONF_INCLUDE_WARNINGS,
     CONF_KEEP_HISTORY,
@@ -123,9 +123,7 @@ def _is_spook_available(hass: HomeAssistant) -> bool:
         return True
     if "spook" in hass.data:
         return True
-    if "spook" in hass.config.components:
-        return True
-    return False
+    return "spook" in hass.config.components
 
 
 def _extract_conf(conf: dict) -> dict:
@@ -188,7 +186,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     @callback
     def _on_started_yaml(_event) -> None:
         async def _delayed():
-            import asyncio
             await asyncio.sleep(10)
             await generate_cb()
         hass.async_create_task(_delayed())
@@ -227,7 +224,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     @callback
     def _on_started(_event) -> None:
         async def _delayed():
-            import asyncio
             await asyncio.sleep(10)
             await generate_cb()
         hass.async_create_task(_delayed())
@@ -282,7 +278,7 @@ async def _do_generate(
     alert_type: str | None = None,
     stability_context: dict | None = None,
 ) -> None:
-    generated_at = datetime.now()
+    generated_at = datetime.now()  # noqa: DTZ005
     include_warnings = opts["include_warnings"]
 
     sentinel_items: list = hass.data.get(DATA_KEY_SENTINEL) or []
@@ -433,7 +429,7 @@ async def _send_companion_notification(
         title = "⚠️ Sentinel Report — HA Repairs"
         message = f"{ha_repair_count} deprecated warning{'s' if ha_repair_count > 1 else ''} détecté{'s' if ha_repair_count > 1 else ''}."
 
-    if not should_notify or not message:
+    if not should_notify or not message:  # noqa: SIM103
         return
 
     try:

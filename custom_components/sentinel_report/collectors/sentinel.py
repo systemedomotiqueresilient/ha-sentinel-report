@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -58,7 +59,7 @@ class StabilityWatcher:
 
     def on_item_update(self, item_id: str, name: str, is_healthy: bool) -> None:
         """Appelé à chaque changement d'état d'un item Sentinel."""
-        now = datetime.now()
+        now = datetime.now()  # noqa: DTZ005
 
         if item_id not in self._watched:
             if is_healthy:
@@ -115,7 +116,7 @@ class StabilityWatcher:
         name = entry["name"]
         first_failure = entry["first_failure"]
         is_healthy_now = entry["last_state_healthy"]
-        duration = datetime.now() - first_failure
+        duration = datetime.now() - first_failure  # noqa: DTZ005
         duration_str = _format_duration(duration.total_seconds())
 
         # Ignorer si moins de STABILITY_MIN_CYCLES cycles — comportement normal
@@ -141,7 +142,7 @@ class StabilityWatcher:
                     "cycles":        cycles,
                     "duration":      duration_str,
                     "first_failure": first_failure.strftime("%Y-%m-%d %H:%M:%S"),
-                    "resolved_at":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "resolved_at":   datetime.now().strftime("%Y-%m-%d %H:%M:%S"),  # noqa: DTZ005
                     "type":          "resolved",
                 }
             )
@@ -213,7 +214,7 @@ def _collect_items(hass: HomeAssistant) -> list[dict]:
             if item.since:
                 try:
                     since_str = item.since.strftime("%Y-%m-%d %H:%M:%S")
-                except Exception:
+                except Exception:  # noqa: BLE001
                     since_str = str(item.since)
 
             # Enrichir avec les données de stabilité si disponibles
