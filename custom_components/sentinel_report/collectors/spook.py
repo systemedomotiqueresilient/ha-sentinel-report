@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import issue_registry as ir
 
 from ..const import DATA_KEY_SPOOK
 
@@ -90,7 +91,6 @@ def _collect_issues(hass: HomeAssistant) -> list[dict]:
     """Lire les issues Spook depuis le repair/issue registry de HA."""
     issues = []
     try:
-        from homeassistant.helpers import issue_registry as ir
         registry = ir.async_get(hass)
         for issue in registry.issues.values():
             if issue.domain != _SPOOK_DOMAIN:

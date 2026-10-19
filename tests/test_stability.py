@@ -5,7 +5,7 @@ import asyncio
 import sys
 import os
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -16,7 +16,6 @@ from custom_components.sentinel_report.collectors.sentinel import (
 from custom_components.sentinel_report.const import (
     DATA_KEY_RESOLVED,
     DATA_KEY_STABILITY,
-    STABILITY_MIN_CYCLES,
 )
 from custom_components.sentinel_report.reporter import generate_report
 
@@ -26,11 +25,14 @@ from custom_components.sentinel_report.reporter import generate_report
 def _make_hass() -> MagicMock:
     hass = MagicMock()
     hass.data = {}
-    hass.async_create_task = lambda coro: asyncio.ensure_future(coro)
+    # Créer un event loop dédié pour les tests synchrones
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    hass.async_create_task = lambda coro: loop.create_task(coro)
     return hass
 
 
-def _make_generate_cb() -> tuple[AsyncMock, list]:
+def _make_generate_cb() -> tuple:
     """Retourne un callback mock et la liste des appels reçus."""
     calls = []
 
@@ -65,56 +67,45 @@ def test_format_duration_zero():
 # ── Tests — StabilityWatcher.on_item_update ──────────────────────────────────
 
 def test_watcher_ignores_healthy_item_not_watched():
-    """Un item sain qu'on ne surveille pas encore est ignoré."""
     hass = _make_hass()
     cb, calls = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=60, generate_callback=cb)
-
     watcher.on_item_update("item1", "Z2M", is_healthy=True)
     assert "item1" not in watcher._watched
 
 
 def test_watcher_starts_watching_on_first_failure():
-    """Un premier échec démarre la surveillance."""
     hass = _make_hass()
     cb, calls = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=60, generate_callback=cb)
-
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
     assert "item1" in watcher._watched
     assert watcher._watched["item1"]["cycles"] == 0
 
 
 def test_watcher_counts_cycle_on_rechute():
-    """Un cycle unhealthy → healthy → unhealthy incrémente le compteur."""
     hass = _make_hass()
     cb, calls = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=60, generate_callback=cb)
-
-    watcher.on_item_update("item1", "Z2M", is_healthy=False)  # première panne
-    watcher.on_item_update("item1", "Z2M", is_healthy=True)   # récupération
-    watcher.on_item_update("item1", "Z2M", is_healthy=False)  # rechute → cycle
-
+    watcher.on_item_update("item1", "Z2M", is_healthy=False)
+    watcher.on_item_update("item1", "Z2M", is_healthy=True)
+    watcher.on_item_update("item1", "Z2M", is_healthy=False)
     assert watcher._watched["item1"]["cycles"] == 1
 
 
 def test_watcher_counts_multiple_cycles():
-    """Plusieurs cycles sont comptés correctement."""
     hass = _make_hass()
     cb, calls = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=60, generate_callback=cb)
-
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
     watcher.on_item_update("item1", "Z2M", is_healthy=True)
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
     watcher.on_item_update("item1", "Z2M", is_healthy=True)
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
-
     assert watcher._watched["item1"]["cycles"] == 2
 
 
 def test_watcher_update_delay():
-    """update_delay met à jour le délai correctement."""
     hass = _make_hass()
     cb, calls = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=60, generate_callback=cb)
@@ -127,53 +118,45 @@ def test_watcher_update_delay():
 async def _run_watcher_scenario(
     events: list[tuple[bool, float]],
     stability_delay: float = 0.1,
-) -> tuple[dict, list, list]:
-    """
-    Exécuter un scénario de stabilité.
-    events : liste de (is_healthy, sleep_before_next)
-    Retourne (hass.data, resolved_list, stability_dict, generate_calls).
-    """
-    hass = _make_hass()
+) -> tuple[dict, list]:
+    hass = MagicMock()
+    hass.data = {}
     hass.data[DATA_KEY_STABILITY] = {}
     hass.data[DATA_KEY_RESOLVED] = []
     cb, calls = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=stability_delay, generate_callback=cb)
+    # Dans un contexte async, async_create_task crée une vraie tâche
+    hass.async_create_task = lambda coro: asyncio.ensure_future(coro)
 
     for is_healthy, sleep_after in events:
         watcher.on_item_update("item1", "Z2M Bridge", is_healthy=is_healthy)
         if sleep_after > 0:
             await asyncio.sleep(sleep_after)
 
-    # Attendre que le timer expire
     await asyncio.sleep(stability_delay + 0.05)
-
     return hass.data, calls
 
 
 def test_watcher_below_min_cycles_no_generate():
-    """Moins de STABILITY_MIN_CYCLES cycles → pas de génération spéciale."""
     async def _run():
-        # Un seul cycle (panne → pas de rechute) → sous le seuil
         hass_data, calls = await _run_watcher_scenario(
             events=[(False, 0), (True, 0)],
             stability_delay=0.05,
         )
-        # Pas de génération depuis le watcher (sous le seuil)
         assert calls == []
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
 def test_watcher_restart_fail_triggers_generate():
-    """Timer expiré avec item toujours en erreur → alert_type restart_fail."""
     async def _run():
         hass_data, calls = await _run_watcher_scenario(
             events=[
-                (False, 0.01),  # panne
-                (True,  0.01),  # récupération apparente
-                (False, 0.01),  # rechute (cycle 1)
-                (True,  0.01),  # récupération apparente
-                (False, 0.0),   # rechute finale (cycle 2) — reste en erreur
+                (False, 0.01),
+                (True,  0.01),
+                (False, 0.01),
+                (True,  0.01),
+                (False, 0.0),
             ],
             stability_delay=0.05,
         )
@@ -183,20 +166,19 @@ def test_watcher_restart_fail_triggers_generate():
         assert ctx["cycles"] == 2
         assert ctx["resolved"] is False
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
 def test_watcher_resolved_triggers_generate():
-    """Timer expiré avec item sain → alert_type on_resolved."""
     async def _run():
         hass_data, calls = await _run_watcher_scenario(
             events=[
-                (False, 0.01),  # panne
-                (True,  0.01),  # récupération
-                (False, 0.01),  # rechute (cycle 1)
-                (True,  0.01),  # récupération
-                (False, 0.01),  # rechute (cycle 2)
-                (True,  0.0),   # récupération finale — stable
+                (False, 0.01),
+                (True,  0.01),
+                (False, 0.01),
+                (True,  0.01),
+                (False, 0.01),
+                (True,  0.0),
             ],
             stability_delay=0.05,
         )
@@ -206,32 +188,41 @@ def test_watcher_resolved_triggers_generate():
         assert ctx["cycles"] == 2
         assert ctx["resolved"] is True
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
-# ── Tests — generate_report avec resolved_incidents ──────────────────────────
+# ── Tests — generate_report avec ha_repairs + resolved_incidents ──────────────
 
 FIXED_DT = datetime(2026, 9, 1, 10, 0, 0)
 
 
-def _report(*args, **kwargs):
-    content, _, _ = generate_report(*args, **kwargs, generated_at=FIXED_DT)
+def _report(sentinel_items, spook_issues, resolved_incidents,
+            include_warnings, ha_repairs=None):
+    """Helper — passe ha_repairs=[] par défaut."""
+    content, _, _ = generate_report(
+        sentinel_items, spook_issues, ha_repairs or [],
+        resolved_incidents, include_warnings,
+        generated_at=FIXED_DT,
+    )
     return content
 
 
-def _flags(*args, **kwargs):
-    _, has_problems, has_resolved = generate_report(*args, **kwargs, generated_at=FIXED_DT)
+def _flags(sentinel_items, spook_issues, resolved_incidents,
+           include_warnings, ha_repairs=None):
+    _, has_problems, has_resolved = generate_report(
+        sentinel_items, spook_issues, ha_repairs or [],
+        resolved_incidents, include_warnings,
+        generated_at=FIXED_DT,
+    )
     return has_problems, has_resolved
 
 
 def test_report_no_resolved_section_when_empty():
-    """Sans incidents résolus, la section RÉSOLUS n'apparaît pas."""
     content = _report([], [], [], include_warnings=True)
     assert "INCIDENTS RÉSOLUS" not in content
 
 
 def test_report_resolved_section_present():
-    """Avec incidents résolus, la section apparaît."""
     resolved = [{
         "id": "item1",
         "name": "Z2M Bridge",
@@ -250,18 +241,14 @@ def test_report_resolved_section_present():
 
 
 def test_report_has_resolved_flag():
-    """has_resolved est True si des incidents résolus sont présents."""
     resolved = [{"id": "x", "name": "Z2M", "cycles": 2,
                  "duration": "1 min", "first_failure": "", "resolved_at": "", "type": "resolved"}]
-    _, has_resolved = _flags([], [], resolved, include_warnings=True)[1], \
-                      _flags([], [], resolved, include_warnings=True)[1]
     hp, hr = _flags([], [], resolved, include_warnings=True)
     assert hr is True
     assert hp is False
 
 
 def test_report_stability_enrichment_in_problems():
-    """Un item avec stability_type=restart_failed affiche le message enrichi."""
     sentinel_items = [{
         "id": "item1",
         "name": "Z2M Bridge",
@@ -283,7 +270,6 @@ def test_report_stability_enrichment_in_problems():
 
 
 def test_report_footer_includes_resolved():
-    """Le footer mentionne les incidents résolus."""
     resolved = [{"id": "x", "name": "Z2M", "cycles": 2,
                  "duration": "1 min", "first_failure": "", "resolved_at": "", "type": "resolved"}]
     content = _report([], [], resolved, include_warnings=True)
@@ -310,12 +296,10 @@ def test_validate_stability_delay_valid():
 
 
 def test_validate_stability_delay_boundary_low():
-    """60 secondes exactement doit être accepté."""
     from custom_components.sentinel_report.config_flow import _validate_inputs
     assert _validate_inputs("/share", "report.txt", 60) is None
 
 
 def test_validate_stability_delay_boundary_high():
-    """3600 secondes exactement doit être accepté."""
     from custom_components.sentinel_report.config_flow import _validate_inputs
     assert _validate_inputs("/share", "report.txt", 3600) is None

@@ -52,19 +52,21 @@ SPOOK_ISSUE = {
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def report(sentinel_items, spook_issues, include_warnings, resolved_incidents=None, **kwargs):
+def report(sentinel_items, spook_issues, include_warnings, resolved_incidents=None, ha_repairs=None, **kwargs):
     """Appeler generate_report et retourner uniquement le contenu texte."""
     content, _, _ = generate_report(
-        sentinel_items, spook_issues, resolved_incidents or [],
+        sentinel_items, spook_issues, ha_repairs or [],
+        resolved_incidents or [],
         include_warnings, generated_at=FIXED_DT, **kwargs
     )
     return content
 
 
-def has_problems(sentinel_items, spook_issues, include_warnings, resolved_incidents=None, **kwargs):
+def has_problems(sentinel_items, spook_issues, include_warnings, resolved_incidents=None, ha_repairs=None, **kwargs):
     """Appeler generate_report et retourner uniquement le flag has_problems."""
     _, flag, _ = generate_report(
-        sentinel_items, spook_issues, resolved_incidents or [],
+        sentinel_items, spook_issues, ha_repairs or [],
+        resolved_incidents or [],
         include_warnings, generated_at=FIXED_DT, **kwargs
     )
     return flag
