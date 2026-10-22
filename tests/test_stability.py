@@ -81,6 +81,8 @@ def test_watcher_starts_watching_on_first_failure():
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
     assert "item1" in watcher._watched
     assert watcher._watched["item1"]["cycles"] == 0
+    # Annuler le timer pour éviter le RuntimeWarning
+    watcher._watched["item1"]["timer"].cancel()
 
 
 def test_watcher_counts_cycle_on_rechute():
@@ -91,6 +93,7 @@ def test_watcher_counts_cycle_on_rechute():
     watcher.on_item_update("item1", "Z2M", is_healthy=True)
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
     assert watcher._watched["item1"]["cycles"] == 1
+    watcher._watched["item1"]["timer"].cancel()
 
 
 def test_watcher_counts_multiple_cycles():
@@ -103,11 +106,17 @@ def test_watcher_counts_multiple_cycles():
     watcher.on_item_update("item1", "Z2M", is_healthy=True)
     watcher.on_item_update("item1", "Z2M", is_healthy=False)
     assert watcher._watched["item1"]["cycles"] == 2
+    watcher._watched["item1"]["timer"].cancel()
 
 
 def test_watcher_update_delay():
-    hass = _make_hass()
-    cb, calls = _make_generate_cb()
+    """update_delay met à jour le délai correctement sans créer de tâches."""
+    from unittest.mock import MagicMock
+    hass = MagicMock()
+    hass.data = {}
+    # Ne pas créer de vraies tâches asyncio pour ce test
+    hass.async_create_task = MagicMock()
+    cb, _ = _make_generate_cb()
     watcher = StabilityWatcher(hass, stability_delay=60, generate_callback=cb)
     watcher.update_delay(120)
     assert watcher._delay == 120
