@@ -13,6 +13,10 @@ ignore = ["E501"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::RuntimeWarning:asyncio",
+    "ignore::DeprecationWarning",
+]
 
 [tool.coverage.run]
 source = ["custom_components/sentinel_report"]
