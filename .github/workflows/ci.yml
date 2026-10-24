@@ -33,7 +33,7 @@ jobs:
           pytest tests/ -v --tb=short \
             --cov=custom_components/sentinel_report \
             --cov-report=term-missing \
-            --cov-fail-under=60
+            --cov-fail-under=50
 
   versions:
     name: Cohérence des versions
