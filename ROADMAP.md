@@ -85,6 +85,19 @@
 - [x] Option `include_ha_repairs` dans le config flow (activée par défaut)
 - [x] Alerte companion app `on_ha_repair`
 
+## v0.7.0 — Contrat public Sentinel ✅
+
+- [x] Collecteur Sentinel alimenté par l'événement public `sentinel_item_changed`
+- [x] État initial via le service public `sentinel.check`
+- [x] Repli "au mieux" sur `hass.data["sentinel"]` si `fire_events` est désactivé
+- [x] Horodatages `since` convertis en heure locale
+- [x] Désabonnement propre au rechargement de l'intégration
+
+## v0.7.1 — Issues fantômes ✅
+
+- [x] Les collecteurs Spook et HA Repairs ignorent les issues inactives (`active=False`)
+  rechargées du stockage de HA au démarrage
+
 ## v1.0.0 — Publication HACS
 
 - [ ] Icon et brand assets (logo Sentinel Report)

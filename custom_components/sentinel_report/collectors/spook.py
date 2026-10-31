@@ -95,6 +95,11 @@ def _collect_issues(hass: HomeAssistant) -> list[dict]:
         for issue in registry.issues.values():
             if issue.domain != _SPOOK_DOMAIN:
                 continue
+            # Ignorer les entrées "fantômes" : au démarrage, HA recharge depuis son
+            # stockage les issues non persistantes avec active=False, sans clé de
+            # traduction ni placeholders (l'interface Repairs les masque aussi).
+            if not getattr(issue, "active", True):
+                continue
             if issue.dismissed_version is not None:
                 continue
 

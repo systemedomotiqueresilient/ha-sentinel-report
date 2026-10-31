@@ -213,7 +213,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     generate_cb = _make_generate_callback(hass, full_path, opts)
     _register_services(hass, full_path, opts, generate_cb)
 
-    await collector_sentinel.async_setup(hass, opts["stability_delay"], generate_cb)
+    unsubscribe_sentinel = await collector_sentinel.async_setup(
+        hass, opts["stability_delay"], generate_cb
+    )
+    entry.async_on_unload(unsubscribe_sentinel)
     if _is_spook_available(hass):
         await collector_spook.async_setup(hass)
     if opts["include_ha_repairs"]:

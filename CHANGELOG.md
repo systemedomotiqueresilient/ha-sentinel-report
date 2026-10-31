@@ -10,6 +10,71 @@ et ce projet respecte le [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [0.7.1] — 2026-10-28
+
+### Fixed
+- **Issues "fantômes" dans les sections SPOOK et HA REPAIRS.** Au démarrage, Home
+  Assistant recharge depuis son stockage les issues non persistantes avec
+  `active=False`, sans clé de traduction, sans placeholders et sans sévérité.
+  L'interface Repairs les masque, mais les collecteurs les listaient : après un
+  redémarrage, les issues Spook s'affichaient sous la forme brute
+  `[type_hash]` et plusieurs HA Repairs devenaient des WARNING sans détail
+  (ex: `backup_checkup`, passé d'ERROR à WARNING). Les collecteurs Spook et
+  HA Repairs ignorent maintenant les issues inactives.
+- Les issues `stale_access_tokens` et `orphaned_statistics`, supprimées de Spook
+  depuis la v5.3.0 mais toujours présentes dans le stockage de HA, ne
+  réapparaissent plus dans le rapport.
+
+### Changed
+- `tests/test_inactive_issues.py` : 6 tests couvrant les issues inactives.
+
+### Notes
+- Juste après un redémarrage, ces sections peuvent être plus courtes tant que
+  Spook et HA n'ont pas recréé leurs issues actives. Un `sentinel_report.generate`
+  quelques minutes plus tard donne le tableau complet.
+
+---
+
+## [0.7.0] — 2026-10-27
+
+### Changed
+- **Le collecteur Sentinel s'appuie sur le contrat public de Sentinel**, comme le
+  recommande son auteur : l'événement `sentinel_item_changed` alimente l'état et le
+  StabilityWatcher, et le service public `sentinel.check` fournit l'état initial
+  (il ré-émet un événement par élément en défaut).
+- Les horodatages `since` du rapport sont convertis dans le fuseau horaire de Home
+  Assistant (ils s'affichaient en UTC alors que l'en-tête était en heure locale).
+- `collector_sentinel.async_setup()` retourne une fonction de désabonnement,
+  enregistrée par l'orchestrateur avec `entry.async_on_unload`.
+
+### Added
+- **Repli "au mieux"** sur `hass.data["sentinel"]` et le signal `sentinel_update`
+  (API non officielle de Sentinel) si l'option `fire_events` est désactivée dans
+  Sentinel ou si le service `sentinel.check` est introuvable. Un avertissement
+  est écrit dans les logs.
+- `StabilityWatcher.cancel_all()` : annule les timers au déchargement.
+- Paramètre optionnel `on_stability_change` du StabilityWatcher.
+- `tests/test_sentinel_events.py` : 27 tests (mode événements, instantané, repli,
+  désabonnement, conversion des horodatages).
+- `ha_repairs` : les horodatages ISO 8601 des placeholders (ex: sauvegardes)
+  sont affichés en heure locale.
+
+### Fixed
+- Après un rechargement de l'intégration (changement d'options), le collecteur
+  Sentinel ne se réabonnait plus aux mises à jour (il attendait
+  `homeassistant_started`, déjà passé) et les anciens écouteurs n'étaient pas
+  supprimés.
+- La mention "N'a pas redémarré après X échec(s)" n'était pas dans la liste
+  d'items au moment de la génération du rapport : la liste est maintenant
+  republiée avant la génération.
+- Les métadonnées de stabilité d'un item sont effacées quand il redevient sain.
+
+### Notes
+- Prérequis côté Sentinel : l'option `fire_events` (activée par défaut) doit rester
+  activée pour le mode événements.
+
+---
+
 ## [0.6.2] — 2026-09-07
 
 ### Added

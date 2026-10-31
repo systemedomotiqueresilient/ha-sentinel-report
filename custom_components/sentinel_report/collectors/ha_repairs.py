@@ -10,6 +10,8 @@ mise à jour de Home Assistant.
 from __future__ import annotations
 
 import logging
+import re
+from datetime import datetime
 from typing import Any
 
 from homeassistant.core import HomeAssistant, callback
@@ -35,6 +37,28 @@ def _normalize_severity(severity: Any) -> str:
     return _SEVERITY_MAP.get(raw.lower(), "warning")
 
 
+_ISO_TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+
+
+def _format_value(value: Any) -> str:
+    """Rendre un placeholder lisible.
+
+    Les horodatages ISO 8601 (ex: 2026-10-25T09:09:43.740876+00:00) sont
+    convertis en heure locale (AAAA-MM-JJ HH:MM:SS). Toute autre valeur est
+    renvoyée telle quelle.
+    """
+    text = str(value)
+    if not _ISO_TIMESTAMP.match(text):
+        return text
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return text
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone()
+    return parsed.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _build_label(issue: Any) -> str:
     """Construire un label lisible pour une issue HA Repair."""
     domain = issue.domain or "homeassistant"
@@ -49,14 +73,14 @@ def _build_label(issue: Any) -> str:
     priority_keys = ["integration", "platform", "config_key", "name", "entity_id", "service", "error", "deprecated_behavior", "new_behavior", "domain", "integration_title"]
     for k in priority_keys:
         if k in placeholders:
-            parts.append(f"{k}: {placeholders[k]}")
+            parts.append(f"{k}: {_format_value(placeholders[k])}")
 
     # Ajouter les clés restantes pertinentes
     # Exclure : URLs internes, ids techniques, clés déjà traitées
     skip_keys = set(priority_keys) | {"url", "learn_more_url", "issue_id", "edit"}
     for k, v in placeholders.items():
         if k not in skip_keys and v and len(str(v)) < 100:
-            parts.append(f"{k}: {v}")
+            parts.append(f"{k}: {_format_value(v)}")
 
     return " — ".join(parts)
 
@@ -71,6 +95,12 @@ def _collect_issues(hass: HomeAssistant) -> list[dict]:
         for issue in registry.issues.values():
             # Exclure les domaines gérés par d'autres collecteurs
             if issue.domain in HA_REPAIRS_EXCLUDED_DOMAINS:
+                continue
+            # Ignorer les entrées "fantômes" : au démarrage, HA recharge depuis son
+            # stockage les issues non persistantes avec active=False, sans clé de
+            # traduction, sans placeholders et sans sévérité (l'interface Repairs
+            # les masque aussi). Elles s'affichaient comme des WARNING sans détail.
+            if not getattr(issue, "active", True):
                 continue
             # Exclure les issues ignorées par l'utilisateur
             if issue.dismissed_version is not None:

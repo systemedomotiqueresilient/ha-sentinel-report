@@ -4,7 +4,7 @@
 > dans un fichier texte unique, sans modifier leur code source.
 
 [![CI](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions/workflows/ci.yml/badge.svg)](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions)
-[![Version](https://img.shields.io/badge/version-0.6.2-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.7.1-blue)](VERSION)
 [![HA](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-brightgreen)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -53,7 +53,7 @@ Sentinel et Spook ne sont jamais modifiés — lecture seule uniquement.
 - 📊 Sensor `sensor.sentinel_report_problems` pour les automatisations et dashboards
 - 🖥️ Config flow UI — configuration depuis l'interface HA, une seule vignette
 - 🔒 Enregistrement automatique dans `allowlist_external_dirs`
-- ⚡ Mises à jour en temps réel via le dispatcher Sentinel et le repair registry HA
+- ⚡ Mises à jour en temps réel via l'événement public `sentinel_item_changed` de Sentinel et le repair registry HA
 - 🔄 **StabilityWatcher** : détecte les cycles de plantage/restart et génère automatiquement
   un rapport après stabilisation, avec comptage des cycles et durée d'instabilité
 - 📱 **Notifications companion app** : push sur le smartphone administrateur pour les

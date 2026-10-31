@@ -55,10 +55,12 @@ jamais le code de Sentinel ou Spook. Tout est regroupé dans un seul
 
 ### `collectors/sentinel.py` — Collecteur Sentinel
 
-- Lit `hass.data["sentinel"]` en lecture seule
+- Lit les items Sentinel en lecture seule (jamais modifiés)
 - Filtre les états transitoires (`not_loaded`, `setup_in_progress`)
 - Exclut Sentinel Report de ses propres rapports
-- S'abonne au dispatcher `sentinel_update` pour les mises à jour temps réel
+- S'abonne à l'événement public `sentinel_item_changed` et appelle le service
+  public `sentinel.check` pour l'état initial (repli : `hass.data["sentinel"]` +
+  signal `sentinel_update`, API non officielle de Sentinel)
 - **`StabilityWatcher`** : détecte les cycles d'instabilité, déclenche
   la génération automatique après expiration du timer de stabilité
 - Enrichit les items avec les métadonnées de stabilité (cycles, durée)
@@ -110,8 +112,8 @@ homeassistant_started + 5s
                 ├─▶ persistent_notification (si configuré)
                 └─▶ notify.mobile_app_* (si configuré)
 
-sentinel_update (dispatcher GuiPoM)
-        └─▶ collectors/sentinel._refresh()
+sentinel_item_changed (événement public de Sentinel)
+        └─▶ collectors/sentinel._on_item_changed()
         └─▶ StabilityWatcher.on_item_update()
                 └─▶ (si timer expiré + cycles ≥ 2) → _do_generate(alert_type=...)
 
