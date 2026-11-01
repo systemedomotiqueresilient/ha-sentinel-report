@@ -5,7 +5,7 @@
 
 [![CI](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions/workflows/ci.yml/badge.svg)](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions)
 [![Version](https://img.shields.io/badge/version-0.7.1-blue)](VERSION)
-[![HA](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-brightgreen)](https://www.home-assistant.io/)
+[![HA](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-brightgreen)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
@@ -64,7 +64,7 @@ Sentinel et Spook ne sont jamais modifiés — lecture seule uniquement.
 ```
 ==========================================
   HA SENTINEL REPORT
-  Version : 0.6.2
+  Version : 0.7.1
   Generated: 2026-08-31 07:30:00
 ==========================================
 
@@ -144,7 +144,7 @@ Les collecteurs Sentinel et Spook sont initialisés automatiquement.
 
 ## Déclenchement
 
-**Au démarrage** : automatique, 5 secondes après `homeassistant_started`
+**Au démarrage** : automatique, 10 secondes après `homeassistant_started`
 
 **Manuellement** : service `sentinel_report.generate`
 
@@ -179,8 +179,8 @@ Le sensor `sensor.sentinel_report_problems` expose le nombre total de problèmes
 
 | Composant | Version | Obligatoire |
 |-----------|---------|-------------|
-| Home Assistant OS | 2024.1+ | ✅ |
-| [Sentinel (GuiPoM)](https://github.com/GuiPoM/ha-sentinel) | 0.7.x+ | ✅ |
+| Home Assistant | 2025.1+ | ✅ |
+| [Sentinel (GuiPoM)](https://github.com/GuiPoM/ha-sentinel) | 0.7.4+ recommandé (contrat d'événement documenté) — l'option `fire_events` doit rester activée | ✅ |
 | [Spook (frenck)](https://github.com/frenck/spook) | 5.x+ | ⬜ optionnel |
 
 ## Contribuer

@@ -152,6 +152,41 @@ def test_item_from_event_none_reason_becomes_empty_string():
     assert collector._item_from_event(_payload(reason=None))["reason"] == ""
 
 
+def test_item_from_event_accepts_sentinel_0_7_4_contract_payload():
+    """Payload exact du test de contrat de Sentinel 0.7.4 (tests/test_event_payload.py).
+
+    Sentinel fige ces 12 champs ; nous en lisons 10 (source et item_type ne servent pas).
+    """
+    dt_util.set_default_time_zone(dt_util.UTC)
+    payload = {
+        "item_id": "item-1",
+        "provider": "devices",
+        "name": "Lamp",
+        "domain": "light",
+        "source": "hue",
+        "item_type": "device",
+        "healthy": False,
+        "state": "unavailable",
+        "severity": "error",
+        "reason": "Offline",
+        "failure_count": 2,
+        "since": "2026-10-28T00:00:00+00:00",
+    }
+
+    assert collector._item_from_event(payload) == {
+        "id": "item-1",
+        "name": "Lamp",
+        "provider": "devices",
+        "healthy": False,
+        "state": "unavailable",
+        "severity": "error",
+        "reason": "Offline",
+        "since": "2026-10-28 00:00:00",
+        "failure_count": 2,
+        "domain": "light",
+    }
+
+
 # ── _events_unavailable_reason ───────────────────────────────────────────────
 
 def test_reason_none_when_everything_is_available():
