@@ -8,6 +8,20 @@ et ce projet respecte le [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+### Changed
+- **Rapport complet après le démarrage.** Spook et certains HA Repairs (ex:
+  `backup_checkup`) créent leurs issues progressivement, pendant environ 2 minutes
+  après le boot. En plus du rapport rapide (10 s après `homeassistant_started`), un
+  second rapport est généré 180 s après. Les deux minuteurs sont annulés au
+  déchargement de l'intégration.
+- Tant que HA vient de démarrer (180 s), un résultat vide n'est plus présenté comme
+  "✔ No Spook issues detected" / "All clear" : le rapport affiche "⏳ en cours
+  d'initialisation — résultat non définitif" et une note en en-tête.
+
+### Added
+- `tests/test_startup.py` : tests des libellés de démarrage, de la planification
+  des rapports et de la fenêtre d'initialisation.
+
 ---
 
 ## [0.7.1] — 2026-10-28

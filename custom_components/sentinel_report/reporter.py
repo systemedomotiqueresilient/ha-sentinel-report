@@ -18,12 +18,17 @@ def generate_report(
     resolved_incidents: list[dict[str, Any]] | None,
     include_warnings: bool,
     generated_at: datetime | None = None,
+    initializing: bool = False,
 ) -> tuple[str, bool, bool]:
     """Assembler le contenu texte du rapport.
 
     Retourne un tuple (contenu: str, has_problems: bool, has_resolved: bool).
     - has_problems : True si le rapport contient au moins un problème actif
     - has_resolved : True si le rapport contient des incidents résolus
+
+    `initializing` : True juste après le démarrage de HA. Spook et certains HA Repairs
+    créent leurs issues progressivement : le rapport est marqué non définitif et un
+    résultat vide n'est jamais présenté comme "tout va bien".
     """
     if generated_at is None:
         generated_at = datetime.now()  # noqa: DTZ005
@@ -50,8 +55,14 @@ def generate_report(
         f"  Version : {VERSION}",
         f"  Generated: {now_str}",
         "==========================================",
-        "",
     ]
+    if initializing:
+        lines += [
+            "  ⏳ Démarrage récent de Home Assistant : Spook et HA Repairs peuvent être",
+            "     incomplets. Un rapport complet est généré automatiquement quelques minutes",
+            "     après le démarrage.",
+        ]
+    lines.append("")
 
     # ── Section Sentinel ────────────────────────────────────────────────────
     lines.append(f"--- SENTINEL PROBLEMS ({len(sentinel_items)}) ---")
@@ -98,7 +109,9 @@ def generate_report(
     # ── Section Spook ───────────────────────────────────────────────────────
     if spook_issues is not None:
         lines.append(f"--- SPOOK REPAIRS ({total_spook}) ---")
-        if not spook_issues:
+        if not spook_issues and initializing:
+            lines.append("  ⏳ Spook en cours d'initialisation — résultat non définitif.")
+        elif not spook_issues:
             lines.append("  ✔ No Spook issues detected.")
         else:
             for issue in spook_issues:
@@ -110,7 +123,9 @@ def generate_report(
     # ── Section HA Repairs ───────────────────────────────────────────────────
     if ha_repairs is not None:
         lines.append(f"--- HA REPAIRS ({total_ha_repairs}) ---")
-        if not ha_repairs:
+        if not ha_repairs and initializing:
+            lines.append("  ⏳ HA Repairs en cours d'initialisation — résultat non définitif.")
+        elif not ha_repairs:
             lines.append("  ✔ No HA deprecation issues detected.")
         else:
             for issue in ha_repairs:
@@ -145,7 +160,9 @@ def generate_report(
     # ── Footer ──────────────────────────────────────────────────────────────
     lines.append("==========================================")
 
-    if grand_total == 0 and not has_resolved:
+    if grand_total == 0 and not has_resolved and initializing:
+        lines.append("  ⏳ Démarrage en cours — résultat non définitif.")
+    elif grand_total == 0 and not has_resolved:
         lines.append("  ✔ All clear — no problems detected.")
     else:
         parts = []

@@ -4,9 +4,10 @@ v0.6.2 : ajout du collecteur HA Repairs (deprecated warnings natifs HA).
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
+import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,7 @@ from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import discovery
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType
 
 from .collectors import ha_repairs as collector_ha_repairs
@@ -46,6 +48,7 @@ from .const import (
     DATA_KEY_SENTINEL,
     DATA_KEY_SPOOK,
     DATA_KEY_STABILITY,
+    DATA_KEY_STARTED,
     DEFAULT_COMPANION_ALERTS,
     DEFAULT_COMPANION_DEVICE,
     DEFAULT_HISTORY_DIR,
@@ -61,6 +64,8 @@ from .const import (
     DEFAULT_REPORT_PATH,
     DEFAULT_STABILITY_DELAY,
     DOMAIN,
+    STARTUP_REPORT_DELAY,
+    STARTUP_SETTLE_DELAY,
     VERSION,
 )
 from .reporter import generate_report, purge_history, write_history, write_report
@@ -126,6 +131,46 @@ def _is_spook_available(hass: HomeAssistant) -> bool:
     return "spook" in hass.config.components
 
 
+def _schedule_startup_reports(hass: HomeAssistant, generate_cb: Any) -> Callable[[], None]:
+    """Planifier les rapports de démarrage ; retourne une fonction d'annulation.
+
+    Après `homeassistant_started` : un premier rapport rapide (STARTUP_REPORT_DELAY), puis
+    un rapport complet (STARTUP_SETTLE_DELAY) quand Spook et HA Repairs ont créé leurs issues.
+    """
+    cancels: list[Callable[[], None]] = []
+    state = {"fired": False}
+
+    async def _run(_now: datetime) -> None:
+        await generate_cb()
+
+    @callback
+    def _on_started(_event: Any) -> None:
+        state["fired"] = True
+        hass.data[DATA_KEY_STARTED] = time.monotonic()
+        for delay in (STARTUP_REPORT_DELAY, STARTUP_SETTLE_DELAY):
+            cancels.append(async_call_later(hass, delay, _run))
+
+    unsub_listener = hass.bus.async_listen_once("homeassistant_started", _on_started)
+
+    @callback
+    def _cancel() -> None:
+        if not state["fired"]:
+            unsub_listener()
+        for cancel in cancels:
+            cancel()
+        cancels.clear()
+
+    return _cancel
+
+
+def _is_initializing(hass: HomeAssistant) -> bool:
+    """True tant que HA démarre ou vient de démarrer (fenêtre STARTUP_SETTLE_DELAY)."""
+    started_at = hass.data.get(DATA_KEY_STARTED)
+    if started_at is None:
+        return not hass.is_running
+    return (time.monotonic() - started_at) < STARTUP_SETTLE_DELAY
+
+
 def _extract_conf(conf: dict) -> dict:
     """Extraire toutes les options avec typage strict."""
     return {
@@ -183,14 +228,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     if opts["include_ha_repairs"]:
         await collector_ha_repairs.async_setup(hass)
 
-    @callback
-    def _on_started_yaml(_event) -> None:
-        async def _delayed():
-            await asyncio.sleep(10)
-            await generate_cb()
-        hass.async_create_task(_delayed())
-
-    hass.bus.async_listen_once("homeassistant_started", _on_started_yaml)
+    _schedule_startup_reports(hass, generate_cb)
     _LOGGER.info("Sentinel Report %s initialisé (yaml) — rapport : %s", VERSION, full_path)
     return True
 
@@ -223,15 +261,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await collector_ha_repairs.async_setup(hass)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-
-    @callback
-    def _on_started(_event) -> None:
-        async def _delayed():
-            await asyncio.sleep(10)
-            await generate_cb()
-        hass.async_create_task(_delayed())
-
-    hass.bus.async_listen_once("homeassistant_started", _on_started)
+    entry.async_on_unload(_schedule_startup_reports(hass, generate_cb))
     _LOGGER.info("Sentinel Report %s initialisé (config flow) — rapport : %s", VERSION, full_path)
     return True
 
@@ -240,7 +270,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         for key in (DOMAIN, DATA_KEY_SENTINEL, DATA_KEY_SPOOK, DATA_KEY_HA_REPAIRS,
-                    DATA_KEY_STABILITY, DATA_KEY_RESOLVED):
+                    DATA_KEY_STABILITY, DATA_KEY_RESOLVED, DATA_KEY_STARTED):
             hass.data.pop(key, None)
         for service in ("generate", "purge_history"):
             if hass.services.has_service(DOMAIN, service):
@@ -292,7 +322,7 @@ async def _do_generate(
 
     content, has_problems, has_resolved = generate_report(
         sentinel_items, spook_issues, ha_repairs, resolved_incidents,
-        include_warnings, generated_at,
+        include_warnings, generated_at, _is_initializing(hass),
     )
 
     try:

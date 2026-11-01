@@ -10,6 +10,7 @@ DATA_KEY_SPOOK = "sentinel_report_spook_data"
 DATA_KEY_HA_REPAIRS = "sentinel_report_ha_repairs_data"
 DATA_KEY_STABILITY = "sentinel_report_stability_data"
 DATA_KEY_RESOLVED = "sentinel_report_resolved_data"
+DATA_KEY_STARTED = "sentinel_report_started_at"  # time.monotonic() de homeassistant_started
 
 # Chemins par défaut
 DEFAULT_REPORT_PATH = "/share"
@@ -81,6 +82,12 @@ HA_REPAIRS_EXCLUDED_DOMAINS = {
     "lovelace",
     "blueprint",
 }
+
+# Rapports de démarrage (secondes après homeassistant_started)
+# Spook et certains HA Repairs (ex: backup_checkup) créent leurs issues progressivement
+# après le boot : un premier rapport rapide, puis un rapport complet après stabilisation.
+STARTUP_REPORT_DELAY = 10
+STARTUP_SETTLE_DELAY = 180
 
 # Seuil minimum de cycles pour déclencher la logique d'instabilité
 STABILITY_MIN_CYCLES = 2

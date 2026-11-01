@@ -98,9 +98,17 @@
 - [x] Les collecteurs Spook et HA Repairs ignorent les issues inactives (`active=False`)
   rechargées du stockage de HA au démarrage
 
+## v0.7.2 — Installation & finitions (prochaine version)
+
+- [ ] README : section Installation "HA friendly" (bouton My Home Assistant, étapes HACS
+  dépliées, installation manuelle), dans le style de Sentinel
+- [ ] Workflows : `actions/checkout` en version supérieure (avertissement Node.js)
+- [ ] Manifest : clé `categories` (après vérification des valeurs autorisées)
+
 ## v1.0.0 — Publication HACS
 
-- [ ] Icon et brand assets (logo Sentinel Report)
+- [x] Icon et brand assets (`brand/icon.png`, `icon@2x.png`)
+- [x] CI hassfest + HACS au vert, release `v0.7.1` installée via HACS (dépôt personnalisé)
 - [ ] Soumission au dépôt HACS default
 - [ ] Documentation complète dans `/docs`
 - [ ] Tests d'intégration sur HA OS, Supervised, Container
