@@ -8,6 +8,10 @@ et ce projet respecte le [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+---
+
+## [0.7.2] — 2026-11-02
+
 ### Changed
 - **Rapport complet après le démarrage.** Spook et certains HA Repairs (ex:
   `backup_checkup`) créent leurs issues progressivement, pendant environ 2 minutes
@@ -18,7 +22,17 @@ et ce projet respecte le [Versioning Sémantique](https://semver.org/lang/fr/).
   "✔ No Spook issues detected" / "All clear" : le rapport affiche "⏳ en cours
   d'initialisation — résultat non définitif" et une note en en-tête.
 
+### Fixed
+- **Issues Spook sans détail.** Le collecteur Spook n'affichait que les placeholders
+  qu'il connaissait : `empty_areas` (placeholder `area`) apparaissait deux fois sous
+  la forme `[empty_areas]`, indiscernables. Tout placeholder non vide est maintenant
+  affiché (liens et aide exclus), sur une seule ligne et limité à 200 caractères.
+- **HA Repairs : valeurs multi-lignes.** Un exemple YAML (`yaml_example` des issues
+  `platform_config_not_supported`) s'étalait sur plusieurs lignes du rapport. Il est
+  ramené sur une seule ligne, sans les balises ```.
+
 ### Added
+- `tests/test_labels.py` : 9 tests des libellés Spook et HA Repairs.
 - `tests/test_startup.py` : tests des libellés de démarrage, de la planification
   des rapports et de la fenêtre d'initialisation.
 

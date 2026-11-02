@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "sentinel_report"
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 
 # Clés hass.data
 DATA_KEY_SENTINEL = "sentinel_report_sentinel_data"

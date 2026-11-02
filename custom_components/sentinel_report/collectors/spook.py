@@ -18,6 +18,10 @@ from ..const import DATA_KEY_SPOOK
 _LOGGER = logging.getLogger(__name__)
 
 _SPOOK_DOMAIN = "spook"
+_MAX_VALUE_LENGTH = 200
+
+# Placeholders sans interet pour le rapport (liens, aide)
+_IGNORED_PLACEHOLDERS = {"url", "learn_more_url", "edit"}
 
 
 def _normalize_severity(severity: Any) -> str:
@@ -39,13 +43,18 @@ def _flatten_placeholder(value: str) -> str:
     comme le domaine de l'appareil (ex: `light.salon`, `mqtt`). On filtre
     les tokens qui ne contiennent pas de '.' car ce sont des domaines HA seuls.
     """
+    value = str(value)
     tokens = re.findall(r"`([^`]+)`", value)
     if tokens:
         meaningful = [t for t in tokens if "." in t or "/" in t or " " in t]
         return ", ".join(meaningful if meaningful else tokens)
     flat = re.sub(r"\s*\n\s*-\s*", ", ", value.strip())
     flat = re.sub(r"^-\s*", "", flat)
-    return flat.strip()
+    # Toute valeur restante tient sur une seule ligne, longueur bornee.
+    flat = re.sub(r"\s+", " ", flat).strip()
+    if len(flat) > _MAX_VALUE_LENGTH:
+        flat = flat[: _MAX_VALUE_LENGTH - 1].rstrip() + "…"
+    return flat
 
 
 def _build_label(key: str, placeholders: dict[str, str]) -> str:
@@ -83,6 +92,15 @@ def _build_label(key: str, placeholders: dict[str, str]) -> str:
     for k in sorted(placeholders.keys()):
         if k in list_keys:
             parts.append(f"{k}: {_flatten_placeholder(placeholders[k])}")
+    # Filet de securite : tout autre placeholder non vide est affiche, pour qu'une
+    # issue Spook ne se reduise jamais a son seul identifiant (ex: empty_areas -> area).
+    known = set(preferred_order) | list_keys | _IGNORED_PLACEHOLDERS
+    for k in sorted(placeholders.keys()):
+        if k in known:
+            continue
+        flat = _flatten_placeholder(placeholders[k])
+        if flat:
+            parts.append(f"{k}: {flat}")
 
     return " — ".join(parts)
 

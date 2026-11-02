@@ -44,12 +44,13 @@ def _format_value(value: Any) -> str:
     """Rendre un placeholder lisible.
 
     Les horodatages ISO 8601 (ex: 2026-10-25T09:09:43.740876+00:00) sont
-    convertis en heure locale (AAAA-MM-JJ HH:MM:SS). Toute autre valeur est
-    renvoyée telle quelle.
+    convertis en heure locale (AAAA-MM-JJ HH:MM:SS). Les valeurs multi-lignes
+    (ex: un exemple YAML entre ```) sont ramenées sur une seule ligne.
     """
     text = str(value)
     if not _ISO_TIMESTAMP.match(text):
-        return text
+        text = re.sub(r"```(?:yaml|yml)?", " ", text)
+        return re.sub(r"\s+", " ", text).strip()
     try:
         parsed = datetime.fromisoformat(text)
     except ValueError:

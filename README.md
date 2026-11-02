@@ -4,7 +4,7 @@
 > dans un fichier texte unique, sans modifier leur code source.
 
 [![CI](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions/workflows/ci.yml/badge.svg)](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions)
-[![Version](https://img.shields.io/badge/version-0.7.1-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.7.2-blue)](VERSION)
 [![HA](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-brightgreen)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -64,7 +64,7 @@ Sentinel et Spook ne sont jamais modifiés — lecture seule uniquement.
 ```
 ==========================================
   HA SENTINEL REPORT
-  Version : 0.7.1
+  Version : 0.7.2
   Generated: 2026-08-31 07:30:00
 ==========================================
 

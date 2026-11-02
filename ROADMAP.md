@@ -98,7 +98,14 @@
 - [x] Les collecteurs Spook et HA Repairs ignorent les issues inactives (`active=False`)
   rechargées du stockage de HA au démarrage
 
-## v0.7.2 — Installation & finitions (prochaine version)
+## v0.7.2 — Rapport de démarrage & libellés ✅
+
+- [x] Rapport complet 180 s après `homeassistant_started`, en plus du rapport rapide à 10 s
+- [x] Libellé "⏳ en cours d'initialisation" au lieu de "✔ No issues" juste après le boot
+- [x] Libellés Spook : tous les placeholders non vides sont affichés (ex: `empty_areas`)
+- [x] HA Repairs : valeurs multi-lignes (exemples YAML) ramenées sur une ligne
+
+## v0.7.3 — Installation & finitions (prochaine version)
 
 - [ ] README : section Installation "HA friendly" (bouton My Home Assistant, étapes HACS
   dépliées, installation manuelle), dans le style de Sentinel
