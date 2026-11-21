@@ -8,6 +8,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101"]
+# admin_phone.py est copié À L'IDENTIQUE depuis le dépôt ha-sdr (jamais modifié ici) :
+# il suit l'ordre d'imports de ce dépôt (force-sort-within-sections).
+"custom_components/sentinel_report/admin_phone.py" = ["I001"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

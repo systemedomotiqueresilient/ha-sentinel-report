@@ -16,7 +16,7 @@
           "purge_keep_files": "Nombre de fichiers à conserver",
           "purge_keep_days": "Nombre de jours à conserver",
           "stability_delay": "Délai de stabilité",
-          "companion_device": "Smartphone administrateur (companion app)",
+          "admin_notify_target": "Téléphone admin (smartphone de l'administrateur)",
           "companion_alerts": "Types d'alertes companion app"
         },
         "data_description": {
@@ -25,7 +25,7 @@
           "purge_keep_files": "Utilisé si le mode est 'Conserver N fichiers'. Entre 1 et 365.",
           "purge_keep_days": "Utilisé si le mode est 'Conserver X jours'. Entre 1 et 365.",
           "stability_delay": "Délai sans changement avant génération automatique. Entre 60 et 3600 secondes.",
-          "companion_device": "Service notify.mobile_app_* du smartphone principal. Laisser vide pour désactiver.",
+          "admin_notify_target": "Service notify.mobile_app_… ou entité notify de l'application mobile. Prérempli avec le téléphone déjà choisi dans une autre intégration SDR. Laisser vide pour désactiver les notifications sur le téléphone.",
           "companion_alerts": "Événements déclenchant une notification push."
         }
       }
@@ -38,7 +38,8 @@
       "filename_empty": "Le nom de fichier ne peut pas être vide.",
       "filename_has_slash": "Le nom de fichier ne doit pas contenir de /.",
       "stability_delay_too_low": "Le délai de stabilité doit être d'au moins 60 secondes.",
-      "stability_delay_too_high": "Le délai de stabilité ne peut pas dépasser 3600 secondes."
+      "stability_delay_too_high": "Le délai de stabilité ne peut pas dépasser 3600 secondes.",
+      "invalid_target": "La valeur doit être un service ou une entité de notification, du type notify.xxx."
     }
   },
   "options": {
@@ -57,8 +58,11 @@
           "purge_keep_files": "Nombre de fichiers à conserver",
           "purge_keep_days": "Nombre de jours à conserver",
           "stability_delay": "Délai de stabilité",
-          "companion_device": "Smartphone administrateur (companion app)",
+          "admin_notify_target": "Téléphone admin (smartphone de l'administrateur)",
           "companion_alerts": "Types d'alertes companion app"
+        },
+        "data_description": {
+          "admin_notify_target": "Service notify.mobile_app_… ou entité notify de l'application mobile. Prérempli avec le téléphone déjà choisi dans une autre intégration SDR. Laisser vide pour désactiver les notifications sur le téléphone."
         }
       }
     },
@@ -67,7 +71,8 @@
       "filename_empty": "Le nom de fichier ne peut pas être vide.",
       "filename_has_slash": "Le nom de fichier ne doit pas contenir de /.",
       "stability_delay_too_low": "Le délai de stabilité doit être d'au moins 60 secondes.",
-      "stability_delay_too_high": "Le délai de stabilité ne peut pas dépasser 3600 secondes."
+      "stability_delay_too_high": "Le délai de stabilité ne peut pas dépasser 3600 secondes.",
+      "invalid_target": "La valeur doit être un service ou une entité de notification, du type notify.xxx."
     }
   },
   "selector": {
@@ -91,6 +96,13 @@
         "on_restart_fail": "Échec de restart (toujours en erreur après le délai)",
         "on_resolved": "Résolution d'une instabilité",
         "on_ha_repair": "HA Repairs détectés (deprecated warnings)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "admin_notify_target": {
+        "name": "Téléphone admin"
       }
     }
   }

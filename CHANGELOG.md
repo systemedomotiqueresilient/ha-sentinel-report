@@ -10,6 +10,27 @@ et ce projet respecte le [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [0.7.3] — 2026-11-21
+
+### Added
+- **Téléphone admin commun aux intégrations SDR** (module `admin_phone.py` 1.2.0,
+  copié à l'identique depuis le dépôt de référence ; SHA-256 `1d720150…545b`).
+  Nouveau capteur diagnostic « Téléphone admin » (unique_id
+  `<entry_id>_admin_notify_target`, état = cible ou inconnu, attribut `notify_service`).
+- Le champ est prérempli à l'installation avec le téléphone déjà choisi dans une
+  autre intégration SDR, et accepte un service `notify.mobile_app_*` ou une entité notify.
+- Erreur de saisie `invalid_target` si la valeur n'est pas de la forme `notify.xxx`.
+
+### Changed
+- L'envoi des notifications companion passe par `async_notify_admin` (ne lève jamais
+  d'exception, gère services et entités).
+- La cible est stockée dans `entry.data["admin_notify_target"]` ; l'options flow la met à jour.
+
+### Migration
+- `companion_device` (entry.data ou options) est migré automatiquement vers
+  `admin_notify_target` (version de configuration 1.2), sans perte. La clé yaml
+  `companion_device` reste lue en repli.
+
 ## [0.7.2] — 2026-11-02
 
 ### Changed

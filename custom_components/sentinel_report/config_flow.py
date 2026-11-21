@@ -10,10 +10,15 @@ from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 
+from .admin_phone import (
+    CONF_ADMIN_NOTIFY_TARGET,
+    is_valid_target,
+    normalize_target,
+    suggest_admin_target,
+)
 from .const import (
     COMPANION_ALERT_OPTIONS,
     CONF_COMPANION_ALERTS,
-    CONF_COMPANION_DEVICE,
     CONF_ENTRY_TITLE,
     CONF_INCLUDE_HA_REPAIRS,
     CONF_INCLUDE_WARNINGS,
@@ -26,8 +31,8 @@ from .const import (
     CONF_REPORT_FILE,
     CONF_REPORT_PATH,
     CONF_STABILITY_DELAY,
+    CONFIG_MINOR_VERSION,
     DEFAULT_COMPANION_ALERTS,
-    DEFAULT_COMPANION_DEVICE,
     DEFAULT_INCLUDE_HA_REPAIRS,
     DEFAULT_INCLUDE_WARNINGS,
     DEFAULT_KEEP_HISTORY,
@@ -70,20 +75,11 @@ def _validate_inputs(
     return None
 
 
-def _get_companion_services(hass: HomeAssistant) -> list[dict]:
-    """Lister les services notify.mobile_app_* pour le selector HA."""
-    options = [{"value": "", "label": "Aucun"}]
-    try:
-        notify_services = hass.services.async_services().get("notify", {})
-        for service_name in sorted(notify_services):
-            if "mobile_app" in service_name:
-                options.append({
-                    "value": f"notify.{service_name}",
-                    "label": service_name.replace("mobile_app_", "").replace("_", " ").title(),
-                })
-    except Exception as exc:  # noqa: BLE001
-        _LOGGER.warning("Sentinel Report : impossible de lister les companion apps : %s", exc)
-    return options
+def _validate_target(value: Any) -> str | None:
+    """Valider le téléphone admin : vide accepté, sinon « notify.xxx » (service ou entité)."""
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    return None if is_valid_target(value) else "invalid_target"
 
 
 def _build_schema(
@@ -92,13 +88,18 @@ def _build_schema(
 ) -> vol.Schema:
     """Construire le schéma avec les selectors HA natifs."""
 
-    companion_options = _get_companion_services(hass) if hass else [{"value": "", "label": "Aucun"}]
-    companion_device = current.get(CONF_COMPANION_DEVICE, DEFAULT_COMPANION_DEVICE)
-
-    # Vérifier que la valeur stockée est toujours valide
-    valid_values = [o["value"] for o in companion_options]
-    if companion_device not in valid_values:
-        companion_device = ""
+    # Téléphone admin : valeur courante prioritaire, sinon celle déjà choisie dans une
+    # intégration sœur (une seule valeur), sinon la liste des services/entités mobiles.
+    current_target = current.get(CONF_ADMIN_NOTIFY_TARGET)
+    if hass is not None:
+        admin_default, admin_choices = suggest_admin_target(hass, current_target)
+    else:
+        admin_default, admin_choices = normalize_target(current_target), []
+    admin_key = (
+        vol.Optional(CONF_ADMIN_NOTIFY_TARGET, description={"suggested_value": admin_default})
+        if admin_default
+        else vol.Optional(CONF_ADMIN_NOTIFY_TARGET)
+    )
 
     companion_alerts = current.get(CONF_COMPANION_ALERTS, list(DEFAULT_COMPANION_ALERTS))
     if not isinstance(companion_alerts, list):
@@ -183,12 +184,11 @@ def _build_schema(
                 }
             }),
 
-            vol.Optional(
-                CONF_COMPANION_DEVICE,
-                default=companion_device,
-            ): selector.selector({
+            admin_key: selector.selector({
                 "select": {
-                    "options": companion_options,
+                    "options": admin_choices,
+                    "custom_value": True,
+                    "mode": "dropdown",
                 }
             }),
 
@@ -209,9 +209,9 @@ def _build_schema(
 def _get_current(entry: config_entries.ConfigEntry) -> dict:
     """Fusionner data + options avec les défauts v0.6.1."""
     defaults = {
-        CONF_STABILITY_DELAY:  DEFAULT_STABILITY_DELAY,
-        CONF_COMPANION_DEVICE: DEFAULT_COMPANION_DEVICE,
-        CONF_COMPANION_ALERTS: list(DEFAULT_COMPANION_ALERTS),
+        CONF_STABILITY_DELAY:     DEFAULT_STABILITY_DELAY,
+        CONF_ADMIN_NOTIFY_TARGET: None,
+        CONF_COMPANION_ALERTS:    list(DEFAULT_COMPANION_ALERTS),
     }
     return {**defaults, **entry.data, **entry.options}
 
@@ -220,6 +220,7 @@ class SentinelReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow pour Sentinel Report."""
 
     VERSION = 1
+    MINOR_VERSION = CONFIG_MINOR_VERSION
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -239,7 +240,7 @@ class SentinelReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_PURGE_KEEP_FILES: DEFAULT_PURGE_KEEP_FILES,
             CONF_PURGE_KEEP_DAYS:  DEFAULT_PURGE_KEEP_DAYS,
             CONF_STABILITY_DELAY:  DEFAULT_STABILITY_DELAY,
-            CONF_COMPANION_DEVICE: DEFAULT_COMPANION_DEVICE,
+            CONF_ADMIN_NOTIFY_TARGET: None,
             CONF_COMPANION_ALERTS: list(DEFAULT_COMPANION_ALERTS),
         }
 
@@ -249,11 +250,21 @@ class SentinelReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 user_input.get(CONF_REPORT_FILE, ""),
                 user_input.get(CONF_STABILITY_DELAY, DEFAULT_STABILITY_DELAY),
             )
+            target_error = _validate_target(user_input.get(CONF_ADMIN_NOTIFY_TARGET))
             if error:
                 errors["base"] = error
+            elif target_error:
+                errors[CONF_ADMIN_NOTIFY_TARGET] = target_error
             else:
                 await self._async_allowlist_path(user_input[CONF_REPORT_PATH])
-                return self.async_create_entry(title=CONF_ENTRY_TITLE, data=user_input)
+                data = {
+                    **user_input,
+                    CONF_ADMIN_NOTIFY_TARGET: normalize_target(
+                        user_input.get(CONF_ADMIN_NOTIFY_TARGET)
+                    ),
+                }
+                return self.async_create_entry(title=CONF_ENTRY_TITLE, data=data)
+            current = {**current, **user_input}
 
         return self.async_show_form(
             step_id="user",
@@ -296,12 +307,25 @@ class SentinelReportOptionsFlow(config_entries.OptionsFlow):
                 user_input.get(CONF_REPORT_FILE, ""),
                 user_input.get(CONF_STABILITY_DELAY, DEFAULT_STABILITY_DELAY),
             )
+            target_error = _validate_target(user_input.get(CONF_ADMIN_NOTIFY_TARGET))
             if error:
                 errors["base"] = error
+            elif target_error:
+                errors[CONF_ADMIN_NOTIFY_TARGET] = target_error
             else:
                 if user_input.get(CONF_REPORT_PATH) != current.get(CONF_REPORT_PATH):
                     await self._async_allowlist_path(user_input[CONF_REPORT_PATH])
-                return self.async_create_entry(title="", data=user_input)
+                # Le téléphone admin vit dans entry.data (convention commune SDR), les
+                # autres réglages dans entry.options. Champ vidé = non défini (None).
+                options = dict(user_input)
+                target = normalize_target(options.pop(CONF_ADMIN_NOTIFY_TARGET, None))
+                if target != normalize_target(self.config_entry.data.get(CONF_ADMIN_NOTIFY_TARGET)):
+                    self.hass.config_entries.async_update_entry(
+                        self.config_entry,
+                        data={**self.config_entry.data, CONF_ADMIN_NOTIFY_TARGET: target},
+                    )
+                return self.async_create_entry(title="", data=options)
+            current = {**current, **user_input}
 
         return self.async_show_form(
             step_id="init",

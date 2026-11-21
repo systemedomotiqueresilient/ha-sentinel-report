@@ -105,7 +105,11 @@
 - [x] Libellés Spook : tous les placeholders non vides sont affichés (ex: `empty_areas`)
 - [x] HA Repairs : valeurs multi-lignes (exemples YAML) ramenées sur une ligne
 
-## v0.7.3 — Installation & finitions (prochaine version)
+## v0.7.3 — Téléphone admin commun SDR ✅
+
+- Module `admin_phone.py` 1.2.0, capteur « Téléphone admin », migration `companion_device`.
+
+## v0.7.4 — Installation & finitions (prochaine version)
 
 - [ ] README : section Installation "HA friendly" (bouton My Home Assistant, étapes HACS
   dépliées, installation manuelle), dans le style de Sentinel

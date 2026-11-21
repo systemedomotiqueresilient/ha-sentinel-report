@@ -21,6 +21,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.typing import ConfigType
 
+from .admin_phone import CONF_ADMIN_NOTIFY_TARGET, async_notify_admin, normalize_target
 from .collectors import ha_repairs as collector_ha_repairs
 from .collectors import sentinel as collector_sentinel
 from .collectors import spook as collector_spook
@@ -43,6 +44,7 @@ from .const import (
     CONF_REPORT_FILE,
     CONF_REPORT_PATH,
     CONF_STABILITY_DELAY,
+    CONFIG_MINOR_VERSION,
     DATA_KEY_HA_REPAIRS,
     DATA_KEY_RESOLVED,
     DATA_KEY_SENTINEL,
@@ -90,6 +92,8 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_PURGE_KEEP_FILES, default=DEFAULT_PURGE_KEEP_FILES): cv.positive_int,
                 vol.Optional(CONF_PURGE_KEEP_DAYS, default=DEFAULT_PURGE_KEEP_DAYS): cv.positive_int,
                 vol.Optional(CONF_STABILITY_DELAY, default=DEFAULT_STABILITY_DELAY): cv.positive_int,
+                vol.Optional(CONF_ADMIN_NOTIFY_TARGET): vol.Any(None, cv.string),
+                # Ancien nom, toujours accepté dans configuration.yaml (repli).
                 vol.Optional(CONF_COMPANION_DEVICE, default=DEFAULT_COMPANION_DEVICE): cv.string,
                 vol.Optional(CONF_COMPANION_ALERTS, default=DEFAULT_COMPANION_ALERTS): cv.ensure_list,
             }
@@ -185,7 +189,10 @@ def _extract_conf(conf: dict) -> dict:
         "purge_keep_files":  int(float(conf.get(CONF_PURGE_KEEP_FILES, DEFAULT_PURGE_KEEP_FILES) or DEFAULT_PURGE_KEEP_FILES)),
         "purge_keep_days":   int(float(conf.get(CONF_PURGE_KEEP_DAYS, DEFAULT_PURGE_KEEP_DAYS) or DEFAULT_PURGE_KEEP_DAYS)),
         "stability_delay":   int(float(conf.get(CONF_STABILITY_DELAY, DEFAULT_STABILITY_DELAY) or DEFAULT_STABILITY_DELAY)),
-        "companion_device":  str(conf.get(CONF_COMPANION_DEVICE, DEFAULT_COMPANION_DEVICE)),
+        "admin_notify_target": (
+            normalize_target(conf.get(CONF_ADMIN_NOTIFY_TARGET))
+            or normalize_target(conf.get(CONF_COMPANION_DEVICE))
+        ),
         "companion_alerts":  list(conf.get(CONF_COMPANION_ALERTS, DEFAULT_COMPANION_ALERTS) or []),
     }
 
@@ -263,6 +270,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     entry.async_on_unload(_schedule_startup_reports(hass, generate_cb))
     _LOGGER.info("Sentinel Report %s initialisé (config flow) — rapport : %s", VERSION, full_path)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrer une entrée de config.
+
+    1.1 -> 1.2 : l'ancien réglage ``companion_device`` (service notify.mobile_app_*,
+    stocké dans entry.data puis, après un passage par les options, dans
+    entry.options) devient ``admin_notify_target`` dans entry.data, sans perte.
+    La valeur des options, plus récente, l'emporte sur celle des données.
+    """
+    if entry.version > 1:
+        return False
+
+    if entry.minor_version < CONFIG_MINOR_VERSION:
+        data = {**entry.data}
+        options = {**entry.options}
+        legacy_options = options.pop(CONF_COMPANION_DEVICE, None)
+        legacy_data = data.pop(CONF_COMPANION_DEVICE, None)
+        data[CONF_ADMIN_NOTIFY_TARGET] = (
+            normalize_target(legacy_options)
+            or normalize_target(legacy_data)
+            or normalize_target(data.get(CONF_ADMIN_NOTIFY_TARGET))
+        )
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=CONFIG_MINOR_VERSION
+        )
+        _LOGGER.info(
+            "Sentinel Report : entrée migrée en 1.%d (téléphone admin : %s)",
+            CONFIG_MINOR_VERSION,
+            data[CONF_ADMIN_NOTIFY_TARGET] or "non défini",
+        )
     return True
 
 
@@ -401,11 +440,11 @@ async def _do_generate(
                 },
             )
 
-    companion_device = opts.get("companion_device", "")
+    admin_target = opts.get("admin_notify_target")
     companion_alerts = opts.get("companion_alerts", [])
-    if companion_device and companion_alerts:
+    if admin_target and companion_alerts:
         await _send_companion_notification(
-            hass, companion_device, companion_alerts,
+            hass, admin_target, companion_alerts,
             alert_type, stability_context,
             has_problems, has_resolved, total, ha_repair_count,
             generated_at, full_path,
@@ -414,7 +453,7 @@ async def _do_generate(
 
 async def _send_companion_notification(
     hass: HomeAssistant,
-    device: str,
+    target: str,
     alerts: list[str],
     alert_type: str | None,
     stability_context: dict | None,
@@ -425,7 +464,6 @@ async def _send_companion_notification(
     generated_at: datetime,
     full_path: str,
 ) -> None:
-    service = device.replace("notify.", "") if device.startswith("notify.") else device
     should_notify = False
     title = "📊 Sentinel Report"
     message = ""
@@ -465,15 +503,11 @@ async def _send_companion_notification(
     if not should_notify or not message:  # noqa: SIM103
         return
 
-    try:
-        await hass.services.async_call(
-            "notify", service,
-            {
-                "title": title,
-                "message": message,
-                "data": {"push": {"sound": "default"}, "tag": "sentinel_report"},
-            },
-        )
-        _LOGGER.info("Sentinel Report : notification companion envoyée à '%s'", device)
-    except Exception as exc:  # noqa: BLE001
-        _LOGGER.warning("Sentinel Report : notification companion impossible : %s", exc)
+    # async_notify_admin accepte un service notify.<nom> ou une entité notify, ne lève
+    # jamais d'exception et journalise lui-même un échec d'envoi.
+    sent = await async_notify_admin(
+        hass, target, title, message,
+        data={"push": {"sound": "default"}, "tag": "sentinel_report"},
+    )
+    if sent:
+        _LOGGER.info("Sentinel Report : notification envoyée au téléphone admin '%s'", target)

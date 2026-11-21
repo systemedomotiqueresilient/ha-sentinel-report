@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 DOMAIN = "sentinel_report"
-VERSION = "0.7.2"
+VERSION = "0.7.3"
 
 # Clés hass.data
 DATA_KEY_SENTINEL = "sentinel_report_sentinel_data"
@@ -36,8 +36,11 @@ CONF_PURGE_KEEP_DAYS = "purge_keep_days"
 # Options config flow — stabilité et temps réel
 CONF_STABILITY_DELAY = "stability_delay"  # secondes (60 → 3600)
 
-# Options config flow — companion app
-CONF_COMPANION_DEVICE = "companion_device"   # entité notify.mobile_app_* ou ""
+# Options config flow — téléphone de l'administrateur (companion app)
+# Depuis la 0.7.3 la cible est stockée dans entry.data["admin_notify_target"]
+# (module commun admin_phone.py). CONF_COMPANION_DEVICE n'est conservé que pour
+# migrer les anciennes entrées et pour le repli configuration.yaml.
+CONF_COMPANION_DEVICE = "companion_device"   # ancien nom : notify.mobile_app_* ou ""
 CONF_COMPANION_ALERTS = "companion_alerts"   # liste de types d'alertes
 
 # Valeurs par défaut
@@ -94,3 +97,6 @@ STABILITY_MIN_CYCLES = 2
 
 # Titre de l'entrée config flow
 CONF_ENTRY_TITLE = "Sentinel Report"
+
+# Version mineure du config flow : 2 = cible de notification dans entry.data
+CONFIG_MINOR_VERSION = 2

@@ -4,7 +4,7 @@
 > dans un fichier texte unique, sans modifier leur code source.
 
 [![CI](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions/workflows/ci.yml/badge.svg)](https://github.com/systemedomotiqueresilient/ha-sentinel-report/actions)
-[![Version](https://img.shields.io/badge/version-0.7.2-blue)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.7.3-blue)](VERSION)
 [![HA](https://img.shields.io/badge/Home%20Assistant-2025.1%2B-brightgreen)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -64,7 +64,7 @@ Sentinel et Spook ne sont jamais modifiés — lecture seule uniquement.
 ```
 ==========================================
   HA SENTINEL REPORT
-  Version : 0.7.2
+  Version : 0.7.3
   Generated: 2026-08-31 07:30:00
 ==========================================
 
@@ -139,7 +139,7 @@ Les collecteurs Sentinel et Spook sont initialisés automatiquement.
 | Délai de stabilité | Secondes avant génération auto (60 → 3600) | `60` |
 | Notifications HA | Notification persistante si problèmes | ❌ |
 | Seuil HA | Erreurs uniquement / Tout | `errors_only` |
-| Smartphone admin | Entité `notify.mobile_app_*` | aucun |
+| Téléphone admin | Service `notify.mobile_app_*` ou entité notify (prérempli depuis les autres intégrations SDR) | aucun |
 | Types d'alertes | Push sur : rapport / problèmes / restart fail / résolution | aucun |
 
 ## Déclenchement

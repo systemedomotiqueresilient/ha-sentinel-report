@@ -16,7 +16,7 @@
           "purge_keep_files": "Number of files to keep",
           "purge_keep_days": "Number of days to keep",
           "stability_delay": "Stability delay",
-          "companion_device": "Admin smartphone (companion app)",
+          "admin_notify_target": "Admin phone (administrator's smartphone)",
           "companion_alerts": "Companion app alert types"
         },
         "data_description": {
@@ -25,7 +25,7 @@
           "purge_keep_files": "Used when mode is 'Keep N files'. Between 1 and 365.",
           "purge_keep_days": "Used when mode is 'Keep X days'. Between 1 and 365.",
           "stability_delay": "Delay without changes before automatic report generation. Between 60 and 3600 seconds.",
-          "companion_device": "notify.mobile_app_* service for the main smartphone. Leave empty to disable.",
+          "admin_notify_target": "notify.mobile_app_… service or notify entity of the mobile app. Pre-filled with the phone already chosen in another SDR integration. Leave empty to disable phone notifications.",
           "companion_alerts": "Events triggering a push notification."
         }
       }
@@ -38,7 +38,8 @@
       "filename_empty": "The filename cannot be empty.",
       "filename_has_slash": "The filename must not contain a /.",
       "stability_delay_too_low": "The stability delay must be at least 60 seconds.",
-      "stability_delay_too_high": "The stability delay cannot exceed 3600 seconds."
+      "stability_delay_too_high": "The stability delay cannot exceed 3600 seconds.",
+      "invalid_target": "The value must be a notification service or entity, such as notify.xxx."
     }
   },
   "options": {
@@ -57,8 +58,11 @@
           "purge_keep_files": "Number of files to keep",
           "purge_keep_days": "Number of days to keep",
           "stability_delay": "Stability delay",
-          "companion_device": "Admin smartphone (companion app)",
+          "admin_notify_target": "Admin phone (administrator's smartphone)",
           "companion_alerts": "Companion app alert types"
+        },
+        "data_description": {
+          "admin_notify_target": "notify.mobile_app_… service or notify entity of the mobile app. Pre-filled with the phone already chosen in another SDR integration. Leave empty to disable phone notifications."
         }
       }
     },
@@ -67,7 +71,8 @@
       "filename_empty": "The filename cannot be empty.",
       "filename_has_slash": "The filename must not contain a /.",
       "stability_delay_too_low": "The stability delay must be at least 60 seconds.",
-      "stability_delay_too_high": "The stability delay cannot exceed 3600 seconds."
+      "stability_delay_too_high": "The stability delay cannot exceed 3600 seconds.",
+      "invalid_target": "The value must be a notification service or entity, such as notify.xxx."
     }
   },
   "selector": {
@@ -91,6 +96,13 @@
         "on_restart_fail": "Restart failure (still in error after delay)",
         "on_resolved": "When an instability is resolved",
         "on_ha_repair": "HA Repairs detected (deprecated warnings)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "admin_notify_target": {
+        "name": "Admin phone"
       }
     }
   }
